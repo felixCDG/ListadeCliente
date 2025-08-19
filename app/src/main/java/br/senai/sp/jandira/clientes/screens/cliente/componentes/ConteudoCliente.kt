@@ -1,6 +1,5 @@
 package br.senai.sp.jandira.clientes.screens.cliente.componentes
 
-import android.icu.text.UnicodeSet.SpanCondition
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -32,7 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.provider.FontsContractCompat.Columns
+import androidx.navigation.NavHostController
 import br.senai.sp.jandira.clientes.model.Cliente
 import br.senai.sp.jandira.clientes.service.ClienteService
 import br.senai.sp.jandira.clientes.service.Conexao
@@ -43,7 +42,7 @@ import kotlinx.coroutines.launch
 import retrofit2.await
 
 @Composable
-fun ConteudoCliente(paddingValues: PaddingValues) {
+fun ConteudoCliente(paddingValues: PaddingValues, ControleNavegacao: NavHostController?) {
 
     var mostarMensagemConfirmacao by remember { mutableStateOf(false ) }
 
@@ -77,7 +76,7 @@ fun ConteudoCliente(paddingValues: PaddingValues) {
             contentPadding = PaddingValues(bottom = 80.dp)
         ){
             items (clientes){ cliente ->
-                CardCliente(cliente,)
+                CardCliente(cliente, clienteApi, ControleNavegacao, paddingValues)
             }
         }
     }
@@ -87,10 +86,13 @@ fun ConteudoCliente(paddingValues: PaddingValues) {
 @Composable
 private fun CardCliente(
     cliente: Cliente,
+    clienteApi: ClienteService,
+    ControleNavegacao: NavHostController?,
+    paddingValues: PaddingValues,
 
 
-) {
-    val clienteApi = Conexao().getClienteService()
+    ) {
+
 
     var mostarMensagemConfirmacao by remember { mutableStateOf(false ) }
 
@@ -149,6 +151,7 @@ private fun CardCliente(
                                 mostarMensagemConfirmacao = false
                                 println("******************${excluirCleinte}")
                             }
+                            ControleNavegacao!!.navigate("conteudo")
                         }
                     ) {
                         Text(text = "SIM")
@@ -174,7 +177,7 @@ private fun CardCliente(
 private fun ConteudoClientePreview() {
 
     ClientesTheme {
-        ConteudoCliente(PaddingValues(16.dp))
+        ConteudoCliente(PaddingValues(16.dp), ControleNavegacao = null)
     }
 
 }
