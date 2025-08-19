@@ -13,11 +13,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,13 +34,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.provider.FontsContractCompat.Columns
 import br.senai.sp.jandira.clientes.model.Cliente
+import br.senai.sp.jandira.clientes.service.ClienteService
 import br.senai.sp.jandira.clientes.service.Conexao
 import br.senai.sp.jandira.clientes.ui.theme.ClientesTheme
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import retrofit2.await
 
 @Composable
 fun ConteudoCliente(paddingValues: PaddingValues) {
+
+    var mostarMensagemConfirmacao by remember { mutableStateOf(false ) }
 
     val clienteApi = Conexao().getClienteService()
 
@@ -64,39 +73,100 @@ fun ConteudoCliente(paddingValues: PaddingValues) {
             Text(text = "Lista de Cliente",
                 style = MaterialTheme.typography.titleLarge)
         }
-        LazyColumn {
+        LazyColumn (
+            contentPadding = PaddingValues(bottom = 80.dp)
+        ){
             items (clientes){ cliente ->
-                Card (
-                    modifier = Modifier
-                        .padding(
-                            start = 8.dp,
-                            end = 8.dp,
-                            bottom = 8.dp
-                        )
-                        .fillMaxWidth()
-                        .height(80.dp)
-                ){
-                    Row (
-                        modifier = Modifier .fillMaxSize().padding(5.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ){
-                        Column {
-                            Text(text = cliente.nome,
-                                style = MaterialTheme.typography.titleLarge)
-                            Text(text = cliente.email)
-
-                        }
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "person"
-                        )
-                    }
-                }
+                CardCliente(cliente,)
             }
         }
     }
 
+}
+
+@Composable
+private fun CardCliente(
+    cliente: Cliente,
+
+
+) {
+    val clienteApi = Conexao().getClienteService()
+
+    var mostarMensagemConfirmacao by remember { mutableStateOf(false ) }
+
+    Card(
+        modifier = Modifier
+            .padding(
+                start = 8.dp,
+                end = 8.dp,
+                bottom = 8.dp
+            )
+            .fillMaxWidth()
+            .height(80.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(5.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = cliente.nome,
+                    style = MaterialTheme.typography.titleLarge
+                )
+                Text(text = cliente.email)
+
+            }
+            IconButton(
+                onClick = {
+                        mostarMensagemConfirmacao = true
+                    }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "person"
+                )
+            }
+        }
+        if (mostarMensagemConfirmacao) {
+            AlertDialog(
+                onDismissRequest = {
+                    mostarMensagemConfirmacao = false
+                },
+                title = {
+                    Text(text = "EXCLUINDO CLIENTE!!!")
+                },
+                text = {
+                    Text(text = "Tem certeza que deseja excluir o cliente \n\n ${cliente.nome}")
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            GlobalScope.launch(Dispatchers.IO) {
+                                val excluirCleinte = clienteApi.excluir(cliente).await()
+                                mostarMensagemConfirmacao = false
+                                println("******************${excluirCleinte}")
+                            }
+                        }
+                    ) {
+                        Text(text = "SIM")
+                    }
+
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            mostarMensagemConfirmacao = false
+                        }
+                    ) {
+                        Text(text = "NAO")
+                    }
+                },
+            )
+        }
+    }
 }
 
 @Preview

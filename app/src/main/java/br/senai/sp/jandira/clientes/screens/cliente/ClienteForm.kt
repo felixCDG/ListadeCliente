@@ -12,13 +12,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,6 +49,8 @@ fun ClienteForm(padding: PaddingValues, ControleNavegacao: NavHostController?) {
     var emailCliente by remember { mutableStateOf("")}
     var isNomeError by remember { mutableStateOf(false) }
     var isEmailError by remember { mutableStateOf(false) }
+
+    var mostarMensagemSucesso by remember { mutableStateOf(false ) }
 
     fun validar(): Boolean{
         isNomeError = nomeCliente.length < 3
@@ -89,6 +94,17 @@ fun ClienteForm(padding: PaddingValues, ControleNavegacao: NavHostController?) {
                     capitalization = KeyboardCapitalization.Words,
                     imeAction = ImeAction.Next
                 ),
+                isError = isNomeError,
+                supportingText = {
+                    if(isNomeError){
+                        Text(text = "Nome é obrigatório e deve ter no mínimo 3 caracters")
+                    }
+                },
+                trailingIcon = {
+                    if(isEmailError){
+                        Icon(imageVector = Icons.Default.Info, contentDescription = "")
+                    }
+                }
             )
             OutlinedTextField(
                 value = emailCliente,
@@ -103,8 +119,21 @@ fun ClienteForm(padding: PaddingValues, ControleNavegacao: NavHostController?) {
                 },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Email,
-                )
+                    imeAction = ImeAction.Done
+                ),
+                isError = isEmailError,
+                supportingText = {
+                    if(isEmailError){
+                        Text(text = "Email é obrigatório")
+                    }
+                },
+                trailingIcon = {
+                    if(isEmailError){
+                        Icon(imageVector = Icons.Default.Info, contentDescription = "")
+                    }
+                }
             )
+
             Button(
                 onClick = {
                     if (validar()){
@@ -115,9 +144,9 @@ fun ClienteForm(padding: PaddingValues, ControleNavegacao: NavHostController?) {
                         )
                         GlobalScope.launch(Dispatchers.IO) {
                             val clienteNovo = clienteApi.cadastrarCliente(cliente).await()
+                            mostarMensagemSucesso = true
                             println("******************${clienteNovo}")
                         }
-                        ControleNavegacao!!.navigate("conteudo")
                     }else{
                         println("################### DADOS INVALIDOS ##########################")
                     }
@@ -127,13 +156,48 @@ fun ClienteForm(padding: PaddingValues, ControleNavegacao: NavHostController?) {
                 Text(text = "Gravar Cliente")
             }
         }
+        if(mostarMensagemSucesso){
+            AlertDialog(
+                onDismissRequest = {
+                    nomeCliente = ""
+                    emailCliente = ""
+                    mostarMensagemSucesso = false
+                },
+                title = {
+                    Text(text = "Sucesso")
+                },
+                text = {
+                    Text(text = "Cliente $nomeCliente gravdo com Sucesso!! \n Deseja cadastrar outro cliente ?")
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            nomeCliente = ""
+                            emailCliente = ""
+                            mostarMensagemSucesso = false
+                        }
+                    ) {
+                        Text(text = "Sim!")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            ControleNavegacao!!.navigate("conteudo")
+                        }
+                    ) {
+                        Text(text = "Não!")
+                    }
+                }
+            )
+        }
     }
 
 }
 
 @Preview(
     showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES
+    uiMode = Configuration.UI_MODE_NIGHT_NO
 )
 @Composable
 private fun ClienteFormPreview() {
